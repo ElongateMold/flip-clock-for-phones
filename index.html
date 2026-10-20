@@ -1,0 +1,1838 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>FlipClock Desk Studio</title>
+  <!-- Meta tags para modo pantalla completa nativa en iOS (Añadir a pantalla de inicio) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FlipClock">
+  <meta name="mobile-web-app-capable" content="yes">
+  
+  <!-- Tailwind CDN para navegadores modernos (el CSS interno garantiza funcionamiento 100% offline en iOS 10) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* ==========================================================================
+       VARIABLES Y TEMAS (Con fallbacks directos para motores WebKit antiguos)
+       ========================================================================== */
+    * {
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background-color: #000000;
+      color: #e6e6e6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Definición de temas mediante clases en body (máxima compatibilidad con iOS 9/10) */
+    body.theme-classic {
+      background-color: #000000;
+      color: #dcdcdc;
+    }
+    body.theme-classic .flip-card-face {
+      background-color: #161618;
+      color: #e2e2e5;
+      border-color: #26262a;
+    }
+    body.theme-classic .flip-card-upper {
+      background-image: -webkit-linear-gradient(top, #1f1f22 0%, #151517 100%);
+      background-image: linear-gradient(180deg, #1f1f22 0%, #151517 100%);
+    }
+    body.theme-classic .flip-card-lower {
+      background-image: -webkit-linear-gradient(top, #121214 0%, #1b1b1e 100%);
+      background-image: linear-gradient(180deg, #121214 0%, #1b1b1e 100%);
+    }
+    body.theme-classic .accent-badge {
+      background-color: #27272a;
+      color: #a1a1aa;
+    }
+
+    /* Tema Ámbar Retro (Nixie / Fósforo Ámbar) */
+    body.theme-amber {
+      background-color: #080502;
+      color: #ff9d1c;
+    }
+    body.theme-amber .flip-card-face {
+      background-color: #171008;
+      color: #ffa32b;
+      border-color: #36220c;
+      text-shadow: 0 0 14px rgba(255, 149, 0, 0.45);
+    }
+    body.theme-amber .flip-card-upper {
+      background-image: -webkit-linear-gradient(top, #211509 0%, #140d06 100%);
+      background-image: linear-gradient(180deg, #211509 0%, #140d06 100%);
+    }
+    body.theme-amber .flip-card-lower {
+      background-image: -webkit-linear-gradient(top, #120b05 0%, #1c1208 100%);
+      background-image: linear-gradient(180deg, #120b05 0%, #1c1208 100%);
+    }
+    body.theme-amber .accent-badge {
+      background-color: #2b1a08;
+      color: #ffb347;
+    }
+
+    /* Tema Matrix (Fósforo Verde Terminal) */
+    body.theme-matrix {
+      background-color: #020804;
+      color: #22e566;
+    }
+    body.theme-matrix .flip-card-face {
+      background-color: #08150c;
+      color: #28f070;
+      border-color: #12331c;
+      text-shadow: 0 0 12px rgba(40, 240, 112, 0.4);
+    }
+    body.theme-matrix .flip-card-upper {
+      background-image: -webkit-linear-gradient(top, #0d2113 0%, #07120a 100%);
+      background-image: linear-gradient(180deg, #0d2113 0%, #07120a 100%);
+    }
+    body.theme-matrix .flip-card-lower {
+      background-image: -webkit-linear-gradient(top, #061009 0%, #0b1c10 100%);
+      background-image: linear-gradient(180deg, #061009 0%, #0b1c10 100%);
+    }
+    body.theme-matrix .accent-badge {
+      background-color: #0f2917;
+      color: #4ade80;
+    }
+
+    /* Tema Papel (Minimalista Claro / E-Ink) */
+    body.theme-paper {
+      background-color: #eae6df;
+      color: #1e1e1c;
+    }
+    body.theme-paper .flip-card-face {
+      background-color: #fbf9f5;
+      color: #1f1f1d;
+      border-color: #d5cfc4;
+      -webkit-box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    }
+    body.theme-paper .flip-card-upper {
+      background-image: -webkit-linear-gradient(top, #ffffff 0%, #f3efe8 100%);
+      background-image: linear-gradient(180deg, #ffffff 0%, #f3efe8 100%);
+    }
+    body.theme-paper .flip-card-lower {
+      background-image: -webkit-linear-gradient(top, #ece7df 0%, #faf8f4 100%);
+      background-image: linear-gradient(180deg, #ece7df 0%, #faf8f4 100%);
+    }
+    body.theme-paper .flip-split-line {
+      background-color: rgba(0, 0, 0, 0.16);
+    }
+    body.theme-paper .accent-badge {
+      background-color: #ddd7cc;
+      color: #3a3935;
+    }
+
+    /* Tema Cyberpunk (Neón Synthwave) */
+    body.theme-cyber {
+      background-color: #070312;
+      color: #00f0ff;
+    }
+    body.theme-cyber .flip-card-face {
+      background-color: #130926;
+      color: #00f0ff;
+      border-color: #ff007f;
+      text-shadow: 0 0 14px rgba(0, 240, 255, 0.55);
+    }
+    body.theme-cyber .flip-card-upper {
+      background-image: -webkit-linear-gradient(top, #1d0e38 0%, #110722 100%);
+      background-image: linear-gradient(180deg, #1d0e38 0%, #110722 100%);
+    }
+    body.theme-cyber .flip-card-lower {
+      background-image: -webkit-linear-gradient(top, #0e051c 0%, #190c30 100%);
+      background-image: linear-gradient(180deg, #0e051c 0%, #190c30 100%);
+    }
+    body.theme-cyber .accent-badge {
+      background-color: #2d124d;
+      color: #ff4da6;
+    }
+
+    /* ==========================================================================
+       ESTRUCTURA PRINCIPAL Y FLEXBOX COMPATIBLE CON iOS 10 (-webkit-)
+       ========================================================================== */
+    .app-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-transition: -webkit-transform 0.8s ease;
+      transition: transform 0.8s ease;
+    }
+
+    /* Capa de atenuación nocturna extra (Dimmer) */
+    #night-dimmer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #000000;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 90;
+      -webkit-transition: opacity 0.2s ease;
+      transition: opacity 0.2s ease;
+    }
+
+    /* Efecto parpadeo de alarma */
+    @-webkit-keyframes alarmPulse {
+      0%, 100% { background-color: transparent; }
+      50% { background-color: rgba(239, 68, 68, 0.45); }
+    }
+    @keyframes alarmPulse {
+      0%, 100% { background-color: transparent; }
+      50% { background-color: rgba(239, 68, 68, 0.45); }
+    }
+    .alarm-active-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 40;
+      display: none;
+      -webkit-animation: alarmPulse 0.6s infinite;
+      animation: alarmPulse 0.6s infinite;
+    }
+    .alarm-active-overlay.active {
+      display: block;
+    }
+
+    /* ==========================================================================
+       CONTENEDOR DE TARJETAS FLIP Y ESCALADO ADAPTATIVO
+       ========================================================================== */
+    .clock-stage {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      width: 100%;
+      padding: 8px;
+    }
+
+    .cards-row {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-orient: horizontal;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: row;
+      flex-direction: row;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+    }
+
+    /* Tamaños base de las tarjetas (En modo 2 tarjetas vs 3 tarjetas) */
+    .flip-unit {
+      position: relative;
+      width: 39vw;
+      height: 56vh;
+      max-width: 280px;
+      max-height: 310px;
+      margin: 0 1.4vw;
+      -webkit-perspective: 1000px;
+      perspective: 1000px;
+    }
+
+    /* Cuando se muestran 3 bloques (HH:MM:SS o MM:SS:CS) */
+    .cards-row.three-cards .flip-unit {
+      width: 28vw;
+      height: 46vh;
+      max-width: 220px;
+      max-height: 250px;
+      margin: 0 1vw;
+    }
+
+    /* Modo vertical (Portrait) */
+    @media (orientation: portrait) {
+      .flip-unit {
+        width: 43vw;
+        height: 30vh;
+        max-height: 220px;
+      }
+      .cards-row.three-cards .flip-unit {
+        width: 29vw;
+        height: 22vh;
+        max-height: 165px;
+      }
+    }
+
+    /* Escalas configurables por el usuario */
+    .scale-small .flip-unit {
+      -webkit-transform: scale(0.82);
+      transform: scale(0.82);
+    }
+    .scale-large .flip-unit {
+      -webkit-transform: scale(1.08);
+      transform: scale(1.08);
+    }
+
+    /* ==========================================================================
+       DISEÑO INTERNO Y ANIMACIÓN 3D DE CADA TARJETA SPLIT-FLAP
+       ========================================================================== */
+    .flip-card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 14px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+      -webkit-box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+    }
+
+    /* Tipografía fluida según cantidad de tarjetas y orientación */
+    .flip-digit-text {
+      font-size: 27vw;
+      line-height: 1;
+      font-weight: 800;
+    }
+    .cards-row.three-cards .flip-digit-text {
+      font-size: 19.5vw;
+    }
+    @media (min-width: 768px) {
+      .flip-digit-text { font-size: 185px; }
+      .cards-row.three-cards .flip-digit-text { font-size: 145px; }
+    }
+    @media (orientation: portrait) {
+      .flip-digit-text { font-size: 28vw; }
+      .cards-row.three-cards .flip-digit-text { font-size: 19vw; }
+    }
+
+    /* Mitades superior e inferior de la tarjeta */
+    .flip-card-face {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      overflow: hidden;
+      border-style: solid;
+      border-width: 1px;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+
+    .flip-card-upper {
+      top: 0;
+      border-top-left-radius: 14px;
+      border-top-right-radius: 14px;
+      border-bottom: none;
+    }
+
+    .flip-card-lower {
+      bottom: 0;
+      border-bottom-left-radius: 14px;
+      border-bottom-right-radius: 14px;
+      border-top: none;
+    }
+
+    /* Contenedor interno de altura 200% para centrar exactamente el número en el corte */
+    .flip-face-inner {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 200%;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+    }
+
+    .flip-card-upper .flip-face-inner {
+      top: 0;
+    }
+
+    .flip-card-lower .flip-face-inner {
+      bottom: 0;
+    }
+
+    /* Solapas animadas (Flaps) */
+    .flip-flap-top {
+      z-index: 3;
+      -webkit-transform-origin: 50% 100%;
+      transform-origin: 50% 100%;
+      -webkit-transform: rotateX(0deg);
+      transform: rotateX(0deg);
+    }
+
+    .flip-flap-bottom {
+      z-index: 2;
+      -webkit-transform-origin: 50% 0%;
+      transform-origin: 50% 0%;
+      -webkit-transform: rotateX(90deg);
+      transform: rotateX(90deg);
+    }
+
+    .flip-card.is-flipping .flip-flap-top {
+      -webkit-transition: -webkit-transform 0.22s ease-in;
+      transition: transform 0.22s ease-in;
+      -webkit-transform: rotateX(-90deg);
+      transform: rotateX(-90deg);
+    }
+
+    .flip-card.is-flipping .flip-flap-bottom {
+      -webkit-transition: -webkit-transform 0.22s ease-out 0.21s;
+      transition: transform 0.22s ease-out 0.21s;
+      -webkit-transform: rotateX(0deg);
+      transform: rotateX(0deg);
+    }
+
+    /* Línea divisoria horizontal central y muescas de bisagra */
+    .flip-split-line {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      margin-top: -1.5px;
+      background-color: rgba(0, 0, 0, 0.78);
+      z-index: 10;
+      -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    }
+
+    .flip-hinge-left,
+    .flip-hinge-right {
+      position: absolute;
+      top: 50%;
+      width: 5px;
+      height: 14px;
+      margin-top: -7px;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 11;
+    }
+    .flip-hinge-left {
+      left: 0;
+      border-top-right-radius: 3px;
+      border-bottom-right-radius: 3px;
+    }
+    .flip-hinge-right {
+      right: 0;
+      border-top-left-radius: 3px;
+      border-bottom-left-radius: 3px;
+    }
+
+    /* Etiquetas internas dentro de la tarjeta (AM/PM y nombre de unidad) */
+    .card-badge-ampm {
+      position: absolute;
+      top: 10%;
+      left: 8%;
+      font-size: 2.3vw;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      z-index: 12;
+      opacity: 0.85;
+    }
+    @media (min-width: 768px) {
+      .card-badge-ampm { font-size: 16px; }
+    }
+
+    .card-unit-label {
+      position: absolute;
+      bottom: 7%;
+      right: 8%;
+      font-size: 1.8vw;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      z-index: 12;
+      opacity: 0.45;
+    }
+    @media (min-width: 768px) {
+      .card-unit-label { font-size: 12px; }
+    }
+
+    /* ==========================================================================
+       FECHA INFERIOR, CONTROLES DE MODO Y BARRAS HUD AUTO-OCULTABLES
+       ========================================================================== */
+    .date-banner {
+      margin-top: 2.2vh;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 2.4vw;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      opacity: 0.82;
+      text-align: center;
+    }
+    @media (min-width: 768px) {
+      .date-banner { font-size: 15px; }
+    }
+
+    /* HUD Superior e Inferior */
+    .hud-layer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      -webkit-transition: opacity 0.35s ease, -webkit-transform 0.35s ease;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .hud-top {
+      top: 0;
+      padding: 12px 16px;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      background: -webkit-linear-gradient(top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0) 100%);
+      background: linear-gradient(180deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .hud-bottom {
+      bottom: 0;
+      padding: 12px 16px 16px 16px;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      background: -webkit-linear-gradient(bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+      background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    body.hud-hidden .hud-top {
+      opacity: 0;
+      pointer-events: none;
+      -webkit-transform: translateY(-20px);
+      transform: translateY(-20px);
+    }
+
+    body.hud-hidden .hud-bottom {
+      opacity: 0;
+      pointer-events: none;
+      -webkit-transform: translateY(20px);
+      transform: translateY(20px);
+    }
+
+    /* Botones estilizados para tacto fácil en pantalla de 4" */
+    .pill-group {
+      display: -webkit-inline-box;
+      display: -webkit-inline-flex;
+      display: inline-flex;
+      background-color: rgba(24, 24, 27, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      padding: 3px;
+    }
+
+    .mode-tab {
+      border: none;
+      background: transparent;
+      color: #a1a1aa;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background-color: #ffffff;
+      color: #09090b;
+    }
+
+    .icon-btn {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background-color: rgba(24, 24, 27, 0.88);
+      color: #f4f4f5;
+      border-radius: 999px;
+      padding: 8px 13px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: 6px;
+      display: -webkit-inline-box;
+      display: -webkit-inline-flex;
+      display: inline-flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+    }
+    .icon-btn:active {
+      -webkit-transform: scale(0.95);
+      transform: scale(0.95);
+    }
+
+    .action-btn {
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background-color: rgba(39, 39, 42, 0.92);
+      color: #ffffff;
+      border-radius: 12px;
+      padding: 9px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      margin: 4px;
+      cursor: pointer;
+    }
+    .action-btn:active {
+      -webkit-transform: scale(0.96);
+      transform: scale(0.96);
+    }
+    .action-btn.primary {
+      background-color: #10b981;
+      border-color: #059669;
+      color: #052e16;
+    }
+    .action-btn.warning {
+      background-color: #f59e0b;
+      border-color: #d97706;
+      color: #271202;
+    }
+    .action-btn.danger {
+      background-color: #ef4444;
+      border-color: #dc2626;
+      color: #ffffff;
+    }
+    .preset-chip {
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background-color: rgba(24, 24, 27, 0.85);
+      color: #e4e4e7;
+      border-radius: 8px;
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      margin: 2px;
+      cursor: pointer;
+    }
+
+    /* Lista de vueltas del cronómetro */
+    .laps-box {
+      max-height: 75px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 90%;
+      max-width: 420px;
+      margin-top: 6px;
+      padding: 4px 12px;
+      border-radius: 10px;
+      background-color: rgba(15, 15, 18, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 12px;
+    }
+    .lap-item {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      color: #d4d4d8;
+    }
+
+    /* ==========================================================================
+       MODAL DE CONFIGURACIÓN (DRAWER)
+       ========================================================================== */
+    .settings-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.72);
+      z-index: 80;
+      display: none;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .settings-backdrop.open {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+    }
+
+    .settings-panel {
+      width: 100%;
+      max-width: 460px;
+      max-height: 90vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background-color: #141417;
+      color: #f4f4f5;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 18px;
+      padding: 16px;
+      -webkit-box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+    }
+
+    .setting-row {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 13px;
+    }
+
+    .theme-grid {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-wrap: wrap;
+      flex-wrap: wrap;
+      margin: 6px -4px;
+    }
+
+    .theme-swatch {
+      -webkit-box-flex: 1;
+      -webkit-flex: 1 0 30%;
+      flex: 1 0 30%;
+      margin: 4px;
+      padding: 8px 6px;
+      border-radius: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      background-color: #1f1f23;
+      color: #e4e4e7;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+    }
+    .theme-swatch.selected {
+      border-color: #38bdf8;
+      background-color: rgba(56, 189, 248, 0.15);
+    }
+
+    .toggle-btn {
+      background-color: #27272a;
+      color: #a1a1aa;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .toggle-btn.on {
+      background-color: #2563eb;
+      color: #ffffff;
+      border-color: #3b82f6;
+    }
+  </style>
+</head>
+<body class="theme-classic">
+
+  <!-- Capa de atenuación nocturna extra baja (0% a 85%) -->
+  <div id="night-dimmer"></div>
+
+  <!-- Capa de destello visual cuando termina el temporizador -->
+  <div id="alarm-overlay" class="alarm-active-overlay"></div>
+
+  <!-- BARRA SUPERIOR HUD (Se oculta tras 4s de inactividad) -->
+  <div id="hud-top" class="hud-layer hud-top">
+    <div class="pill-group" id="mode-selector">
+      <button type="button" class="mode-tab active" data-mode="clock">Reloj</button>
+      <button type="button" class="mode-tab" data-mode="stopwatch">Cronómetro</button>
+      <button type="button" class="mode-tab" data-mode="timer">Temporizador</button>
+    </div>
+
+    <div>
+      <button type="button" id="btn-quick-sound" class="icon-btn" title="Sonido Mecánico">
+        <span id="sound-icon-label">♪ ON</span>
+      </button>
+      <button type="button" id="btn-quick-night" class="icon-btn" title="Modo Noche Rápido">
+        <span>☾</span>
+      </button>
+      <button type="button" id="btn-open-settings" class="icon-btn" title="Ajustes">
+        <span>⚙ Ajustes</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ESCENARIO PRINCIPAL DEL FLIP CLOCK -->
+  <div id="app-wrapper" class="app-wrapper">
+    <div id="clock-stage" class="clock-stage">
+      
+      <!-- Fila de tarjetas Flip -->
+      <div id="cards-row" class="cards-row three-cards">
+        
+        <!-- UNIDAD 1: Horas o Minutos -->
+        <div class="flip-unit" id="unit-0">
+          <div class="flip-card" id="card-0">
+            <div id="ampm-badge" class="card-badge-ampm">AM</div>
+            <div id="label-0" class="card-unit-label">HRS</div>
+
+            <!-- Mitad superior fija (muestra el valor nuevo al abrir) -->
+            <div class="flip-card-face flip-card-upper">
+              <div class="flip-face-inner"><span class="flip-digit-text" id="c0-upper">00</span></div>
+            </div>
+            <!-- Mitad inferior fija (muestra el valor actual antes de caer la solapa) -->
+            <div class="flip-card-face flip-card-lower">
+              <div class="flip-face-inner"><span class="flip-digit-text" id="c0-lower">00</span></div>
+            </div>
+            <!-- Solapa superior animada -->
+            <div class="flip-card-face flip-card-upper flip-flap-top">
+              <div class="flip-face-inner"><span class="flip-digit-text" id="c0-flap-top">00</span></div>
+            </div>
+            <!-- Solapa inferior animada -->
+            <div class="flip-card-face flip-card-lower flip-flap-bottom">
+              <div class="flip-face-inner"><span class="flip-digit-text" id="c0-flap-bottom">00</span></div>
+            </div>
+
+            <div class="flip-split-line"></div>
+            <div class="flip-hinge-left"></div>
+            <div class="flip-hinge-right"></div>
+          </div>
+        </div>
+
+        <!-- UNIDAD 2: Minutos o Segundos -->
+        <div class="flip-unit" id="unit-1">
+          <div class="flip-card" id="card-1">
+            <div id="label-1" class="card-unit-label">MIN</div>
+
+            <div class="flip-card-face flip-card-upper">
+              <div class="flip-face-inner"><span class="flip-digit-text" id="c1-upper">00</span></div>
+            </div>
+            <div class="flip-card-face flip-card-lower">
+              <div class="flip-face-inner"><span class="flip-digit-text" id="c1-lower">00</span></div>
+            </div>
+            <div class="flip-card-face flip-card-upper flip-flap-top">
+              <div class="flip-face-inner"><span class="flip-digit-text" id="c1-flap-top">00</span></div>
+            </div>
+            <div class="flip-card-face flip-card-lower flip-flap-bottom">
+              <div class="flip-face-inner"><span class="flip-digit-text" id="c1-flap-bottom">00</span></div>
+            </div>
+
+            <div class="flip-split-line"></div>
+            <div class="flip-hinge-left"></div>
+            <div class="flip-hinge-right"></div>
+          </div>
+        </div>
+
+        <!-- UNIDAD 3: Segundos o Décimas (Opcional en modo Reloj) -->
+        <div class="flip-unit" id="unit-2">
+          <div class="flip-card" id="card-2">
+            <div id="label-2" class="card-unit-label">SEG</div>
+
+            <div class="flip-card-face flip-card-upper">
+              <div class="flip-face-inner"><span class="flip-digit-text" id="c2-upper">00</span></div>
+            </div>
+            <div class="flip-card-face flip-card-lower">
+              <div class="flip-face-inner"><span class="flip-digit-text" id="c2-lower">00</span></div>
+            </div>
+            <div class="flip-card-face flip-card-upper flip-flap-top">
+              <div class="flip-face-inner"><span class="flip-digit-text" id="c2-flap-top">00</span></div>
+            </div>
+            <div class="flip-card-face flip-card-lower flip-flap-bottom">
+              <div class="flip-face-inner"><span class="flip-digit-text" id="c2-flap-bottom">00</span></div>
+            </div>
+
+            <div class="flip-split-line"></div>
+            <div class="flip-hinge-left"></div>
+            <div class="flip-hinge-right"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Banner inferior de fecha o estado -->
+      <div id="date-banner" class="date-banner accent-badge">
+        MARTES, 20 DE OCTUBRE
+      </div>
+
+      <!-- Historial de vueltas (solo visible en modo Cronómetro cuando hay vueltas) -->
+      <div id="laps-container" class="laps-box" style="display: none;"></div>
+    </div>
+  </div>
+
+  <!-- BARRA INFERIOR HUD DE CONTROLES SEGÚN EL MODO -->
+  <div id="hud-bottom" class="hud-layer hud-bottom">
+    
+    <!-- Controles Modo Reloj -->
+    <div id="controls-clock" style="text-align: center;">
+      <span style="font-size: 12px; color: #a1a1aa;">
+        Toca cualquier zona libre para ocultar/mostrar los controles
+      </span>
+    </div>
+
+    <!-- Controles Modo Cronómetro -->
+    <div id="controls-stopwatch" style="display: none; text-align: center;">
+      <button type="button" id="btn-sw-toggle" class="action-btn primary">Iniciar</button>
+      <button type="button" id="btn-sw-lap" class="action-btn">Vuelta</button>
+      <button type="button" id="btn-sw-reset" class="action-btn danger">Reiniciar</button>
+    </div>
+
+    <!-- Controles Modo Temporizador -->
+    <div id="controls-timer" style="display: none; text-align: center;">
+      <div style="margin-bottom: 6px;">
+        <button type="button" class="preset-chip" data-add-sec="60">+1 min</button>
+        <button type="button" class="preset-chip" data-add-sec="300">+5 min</button>
+        <button type="button" class="preset-chip" data-add-sec="600">+10 min</button>
+        <button type="button" class="preset-chip" data-add-sec="1500">+25m (Pomodoro)</button>
+        <button type="button" class="preset-chip" data-add-sec="15">+15 seg</button>
+        <button type="button" id="btn-tm-clear" class="preset-chip" style="color:#f87171;">Limpiar</button>
+      </div>
+      <div>
+        <button type="button" id="btn-tm-toggle" class="action-btn primary">Iniciar</button>
+        <button type="button" id="btn-tm-reset" class="action-btn warning">Restaurar</button>
+        <button type="button" id="btn-tm-stop-alarm" class="action-btn danger" style="display: none;">¡Detener Alarma!</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODAL DE CONFIGURACIÓN -->
+  <div id="settings-backdrop" class="settings-backdrop">
+    <div class="settings-panel" id="settings-panel">
+      <div style="display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-pack: justify; -webkit-justify-content: space-between; justify-content: space-between; -webkit-box-align: center; -webkit-align-items: center; align-items: center; margin-bottom: 10px;">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 800;">Configuración del Reloj</h2>
+        <button type="button" id="btn-close-settings" class="toggle-btn" style="background:#ef4444; color:#fff; border:none;">Cerrar ✕</button>
+      </div>
+
+      <!-- Selección de Tema -->
+      <div style="margin-bottom: 10px;">
+        <div style="font-size: 12px; color: #a1a1aa; font-weight: 700; margin-bottom: 4px;">TEMA VISUAL</div>
+        <div class="theme-grid" id="theme-grid">
+          <button type="button" class="theme-swatch selected" data-theme="classic">Clásico Fliqlo</button>
+          <button type="button" class="theme-swatch" data-theme="amber" style="color:#ffa32b;">Ámbar Nixie</button>
+          <button type="button" class="theme-swatch" data-theme="matrix" style="color:#28f070;">Matrix Retro</button>
+          <button type="button" class="theme-swatch" data-theme="paper" style="background:#eae6df; color:#1f1f1d;">Papel Claro</button>
+          <button type="button" class="theme-swatch" data-theme="cyber" style="color:#00f0ff;">Cyberpunk</button>
+        </div>
+      </div>
+
+      <!-- Opciones de formato y visualización -->
+      <div class="setting-row">
+        <span>Formato de Hora (12h / 24h)</span>
+        <button type="button" id="opt-format24" class="toggle-btn">12 Horas (AM/PM)</button>
+      </div>
+
+      <div class="setting-row">
+        <span>Mostrar Segundos en el Reloj</span>
+        <button type="button" id="opt-seconds" class="toggle-btn on">Activado</button>
+      </div>
+
+      <div class="setting-row">
+        <span>Mostrar Fecha en Español</span>
+        <button type="button" id="opt-date" class="toggle-btn on">Activado</button>
+      </div>
+
+      <div class="setting-row">
+        <span>Sonido Mecánico Flip (Tick)</span>
+        <button type="button" id="opt-sound" class="toggle-btn on">Activado</button>
+      </div>
+
+      <div class="setting-row">
+        <span>Tamaño de las Tarjetas</span>
+        <div>
+          <button type="button" class="toggle-btn scale-opt" data-scale="small">Compacto</button>
+          <button type="button" class="toggle-btn scale-opt on" data-scale="normal">Normal</button>
+          <button type="button" class="toggle-btn scale-opt" data-scale="large">Grande</button>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <span>Atenuador Nocturno Extra (<span id="dimmer-val-label">0%</span>)</span>
+        <input type="range" id="opt-dimmer" min="0" max="85" step="5" value="0" style="width: 130px;">
+      </div>
+
+      <div class="setting-row">
+        <span>Protección Pantalla (Pixel Shift)</span>
+        <button type="button" id="opt-burnin" class="toggle-btn on">Activado</button>
+      </div>
+
+      <div class="setting-row" style="border-bottom: none;">
+        <span>Mantener Controles Visibles</span>
+        <button type="button" id="opt-lock-hud" class="toggle-btn">Auto-ocultar (4s)</button>
+      </div>
+
+      <!-- Tip para iPhone 5c -->
+      <div style="margin-top: 10px; padding: 10px; border-radius: 10px; background-color: rgba(255,255,255,0.05); font-size: 11px; color: #a1a1aa; line-height: 1.4;">
+        <strong>💡 Tip para tu iPhone 5c (Safari):</strong> Pulsa el icono de <em>Compartir</em> en Safari y elige <strong>"Añadir a la pantalla de inicio"</strong>. Al abrirlo desde el nuevo icono correrá a pantalla completa sin barras de Safari.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ==========================================================================
+         ESTADO Y PREFERENCIAS PERSISTENTES (localStorage con fallback seguro)
+         ========================================================================== */
+      var STORAGE_KEY = 'flipclock_desk_prefs_v1';
+
+      var state = {
+        mode: 'clock',          // 'clock' | 'stopwatch' | 'timer'
+        theme: 'classic',       // 'classic' | 'amber' | 'matrix' | 'paper' | 'cyber'
+        use24h: false,
+        showSeconds: true,
+        showDate: true,
+        soundEnabled: true,
+        scale: 'normal',        // 'small' | 'normal' | 'large'
+        dimmer: 0,              // 0 a 85 (%)
+        burnInProtection: true,
+        lockHud: false
+      };
+
+      // Variables internas de animación y tiempo
+      var displayedDigits = ['--', '--', '--'];
+      var hudTimeout = null;
+      var pixelShiftStep = 0;
+
+      // Estado del Cronómetro
+      var swRunning = false;
+      var swStartTime = 0;
+      var swElapsedMs = 0;
+      var swLaps = [];
+
+      // Estado del Temporizador
+      var tmRunning = false;
+      var tmTotalSeconds = 300; // 5 minutos por defecto
+      var tmRemainingMs = 300 * 1000;
+      var tmLastTickTime = 0;
+      var alarmActive = false;
+      var alarmInterval = null;
+
+      /* ==========================================================================
+         CARGAR Y GUARDAR PREFERENCIAS
+         ========================================================================== */
+      function loadPreferences() {
+        try {
+          var raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            for (var k in parsed) {
+              if (Object.prototype.hasOwnProperty.call(state, k)) {
+                state[k] = parsed[k];
+              }
+            }
+          }
+        } catch (e) {
+          // Ignorar errores en modo privado de iOS Safari antiguo
+        }
+      }
+
+      function savePreferences() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+          // Ignorar si localStorage está bloqueado
+        }
+      }
+
+      /* ==========================================================================
+         MOTOR DE SONIDO SINTETIZADO (Web Audio API compatible con iOS 10)
+         ========================================================================== */
+      var audioCtx = null;
+
+      function getAudioContext() {
+        if (!audioCtx) {
+          var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            try {
+              audioCtx = new AudioContextClass();
+            } catch (e) {
+              audioCtx = null;
+            }
+          }
+        }
+        if (audioCtx && audioCtx.state === 'suspended' && typeof audioCtx.resume === 'function') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      // Desbloqueo de audio en el primer toque para iOS Safari
+      function unlockAudioOnFirstTouch() {
+        var ctx = getAudioContext();
+        if (!ctx) return;
+        try {
+          var buffer = ctx.createBuffer(1, 1, 22050);
+          var source = ctx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(ctx.destination);
+          if (source.start) {
+            source.start(0);
+          } else if (source.noteOn) {
+            source.noteOn(0);
+          }
+        } catch (e) {}
+      }
+
+      // Sonido mecánico de caída de tarjeta (Split-flap clack)
+      function playFlipClack() {
+        if (!state.soundEnabled) return;
+        var ctx = getAudioContext();
+        if (!ctx) return;
+
+        try {
+          var now = ctx.currentTime;
+
+          // 1. Breve pulso de ruido blanco filtrado (chasquido plástico de la tarjeta)
+          var bufferSize = Math.floor(ctx.sampleRate * 0.028);
+          var noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          var output = noiseBuffer.getChannelData(0);
+          for (var i = 0; i < bufferSize; i++) {
+            output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
+          }
+
+          var whiteNoise = ctx.createBufferSource();
+          whiteNoise.buffer = noiseBuffer;
+
+          var filter = ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.value = 1350;
+          filter.Q.value = 1.6;
+
+          var gainNode = ctx.createGain();
+          gainNode.gain.setValueAtTime(0.26, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.005, now + 0.027);
+
+          whiteNoise.connect(filter);
+          filter.connect(gainNode);
+          gainNode.connect(ctx.destination);
+
+          if (whiteNoise.start) {
+            whiteNoise.start(now);
+          } else if (whiteNoise.noteOn) {
+            whiteNoise.noteOn(now);
+          }
+
+          // 2. Golpe grave sutil de resonancia de carcasa
+          var osc = ctx.createOscillator();
+          var oscGain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(130, now);
+          osc.frequency.exponentialRampToValueAtTime(42, now + 0.035);
+
+          oscGain.gain.setValueAtTime(0.18, now);
+          oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
+          osc.connect(oscGain);
+          oscGain.connect(ctx.destination);
+
+          if (osc.start) {
+            osc.start(now);
+            osc.stop(now + 0.04);
+          }
+        } catch (e) {}
+      }
+
+      // Alarma sintetizada para el Temporizador
+      function playAlarmBeep() {
+        var ctx = getAudioContext();
+        if (!ctx) return;
+
+        try {
+          var now = ctx.currentTime;
+          var freqs = [880, 1174.66]; // La5 + Re6
+          for (var i = 0; i < freqs.length; i++) {
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.value = freqs[i];
+
+            var start = now + i * 0.13;
+            gain.gain.setValueAtTime(0.18, start);
+            gain.gain.exponentialRampToValueAtTime(0.005, start + 0.11);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(start);
+            osc.stop(start + 0.12);
+          }
+        } catch (e) {}
+      }
+
+      /* ==========================================================================
+         LÓGICA DE ACTUALIZACIÓN Y ANIMACIÓN DE TARJETAS FLIP
+         ========================================================================== */
+      function pad2(num) {
+        var n = Math.max(0, Math.floor(num));
+        return n < 10 ? '0' + n : String(n);
+      }
+
+      function updateFlipCard(index, newValue, animate) {
+        if (displayedDigits[index] === newValue) {
+          return;
+        }
+
+        var oldValue = displayedDigits[index] === '--' ? newValue : displayedDigits[index];
+        displayedDigits[index] = newValue;
+
+        var cardEl = document.getElementById('card-' + index);
+        var upperEl = document.getElementById('c' + index + '-upper');
+        var lowerEl = document.getElementById('c' + index + '-lower');
+        var flapTopEl = document.getElementById('c' + index + '-flap-top');
+        var flapBotEl = document.getElementById('c' + index + '-flap-bottom');
+
+        if (!cardEl) return;
+
+        if (!animate) {
+          cardEl.className = 'flip-card';
+          upperEl.textContent = newValue;
+          lowerEl.textContent = newValue;
+          flapTopEl.textContent = newValue;
+          flapBotEl.textContent = newValue;
+          return;
+        }
+
+        // Configurar las caras antes de iniciar la rotación 3D
+        upperEl.textContent = newValue;
+        lowerEl.textContent = oldValue;
+        flapTopEl.textContent = oldValue;
+        flapBotEl.textContent = newValue;
+
+        // Reiniciar clase de animación
+        cardEl.className = 'flip-card';
+        // Forzar reflow para que WebKit reinicie la transición CSS
+        void cardEl.offsetWidth;
+        cardEl.className = 'flip-card is-flipping';
+
+        // Reproducir sonido mecánico (evitar saturar si son centésimas del cronómetro)
+        if (!(state.mode === 'stopwatch' && index === 2)) {
+          playFlipClack();
+        }
+
+        setTimeout(function () {
+          lowerEl.textContent = newValue;
+          flapTopEl.textContent = newValue;
+          cardEl.className = 'flip-card';
+        }, 440);
+      }
+
+      /* ==========================================================================
+         FORMATEO DE FECHA EN ESPAÑOL
+         ========================================================================== */
+      var DIAS = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+      var MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+
+      function getSpanishDateString(dateObj) {
+        var diaSemana = DIAS[dateObj.getDay()];
+        var diaMes = dateObj.getDate();
+        var mes = MESES[dateObj.getMonth()];
+        var anio = dateObj.getFullYear();
+        return diaSemana + ', ' + diaMes + ' DE ' + mes + ' DE ' + anio;
+      }
+
+      /* ==========================================================================
+         BUCLE PRINCIPAL DE RENDERIZADO (Reloj, Cronómetro y Temporizador)
+         ========================================================================== */
+      function tickMainLoop() {
+        var now = new Date();
+        var nowMs = now.getTime();
+
+        if (state.mode === 'clock') {
+          var hours = now.getHours();
+          var minutes = now.getMinutes();
+          var seconds = now.getSeconds();
+          var ampmEl = document.getElementById('ampm-badge');
+
+          if (!state.use24h) {
+            var isPm = hours >= 12;
+            ampmEl.style.display = 'block';
+            ampmEl.textContent = isPm ? 'PM' : 'AM';
+            hours = hours % 12;
+            if (hours === 0) hours = 12;
+          } else {
+            ampmEl.style.display = 'none';
+          }
+
+          updateFlipCard(0, pad2(hours), true);
+          updateFlipCard(1, pad2(minutes), true);
+          if (state.showSeconds) {
+            updateFlipCard(2, pad2(seconds), true);
+          }
+
+          var dateBanner = document.getElementById('date-banner');
+          if (state.showDate) {
+            dateBanner.style.display = 'inline-block';
+            dateBanner.textContent = getSpanishDateString(now);
+          } else {
+            dateBanner.style.display = 'none';
+          }
+
+        } else if (state.mode === 'stopwatch') {
+          var totalSwMs = swElapsedMs + (swRunning ? (nowMs - swStartTime) : 0);
+          var totalSeconds = Math.floor(totalSwMs / 1000);
+          var mins = Math.floor(totalSeconds / 60) % 100;
+          var secs = totalSeconds % 60;
+          var decis = Math.floor((totalSwMs % 1000) / 10);
+
+          updateFlipCard(0, pad2(mins), true);
+          updateFlipCard(1, pad2(secs), true);
+          // Para centésimas actualizamos sin flip lento para que sea legible en tiempo real
+          updateFlipCard(2, pad2(decis), false);
+
+        } else if (state.mode === 'timer') {
+          if (tmRunning) {
+            var delta = nowMs - tmLastTickTime;
+            tmLastTickTime = nowMs;
+            tmRemainingMs -= delta;
+
+            if (tmRemainingMs <= 0) {
+              tmRemainingMs = 0;
+              tmRunning = false;
+              triggerTimerAlarm();
+              syncTimerButtons();
+            }
+          }
+
+          var remTotalSec = Math.ceil(tmRemainingMs / 1000);
+          var tmHours = Math.floor(remTotalSec / 3600);
+          var tmMins = Math.floor((remTotalSec % 3600) / 60);
+          var tmSecs = remTotalSec % 60;
+
+          updateFlipCard(0, pad2(tmHours), true);
+          updateFlipCard(1, pad2(tmMins), true);
+          updateFlipCard(2, pad2(tmSecs), true);
+        }
+      }
+
+      /* ==========================================================================
+         CONTROL DE MODOS Y APARIENCIA VISUAL
+         ========================================================================== */
+      function applyVisualState() {
+        // 1. Aplicar clase de tema al body y estado HUD
+        var classes = ['theme-' + state.theme];
+        if (document.body.className.indexOf('hud-hidden') !== -1 && !state.lockHud) {
+          classes.push('hud-hidden');
+        }
+        document.body.className = classes.join(' ');
+
+        // 2. Aplicar escala del reloj
+        var stage = document.getElementById('clock-stage');
+        stage.className = 'clock-stage scale-' + state.scale;
+
+        // 3. Configurar visibilidad de la 3ra tarjeta según el modo
+        var unit2 = document.getElementById('unit-2');
+        var cardsRow = document.getElementById('cards-row');
+        var showThirdCard = (state.mode !== 'clock') || state.showSeconds;
+
+        if (showThirdCard) {
+          unit2.style.display = 'block';
+          cardsRow.className = 'cards-row three-cards';
+        } else {
+          unit2.style.display = 'none';
+          cardsRow.className = 'cards-row two-cards';
+        }
+
+        // 4. Etiquetas de cada tarjeta según el modo
+        var lbl0 = document.getElementById('label-0');
+        var lbl1 = document.getElementById('label-1');
+        var lbl2 = document.getElementById('label-2');
+        var ampmEl = document.getElementById('ampm-badge');
+        var dateBanner = document.getElementById('date-banner');
+        var lapsBox = document.getElementById('laps-container');
+
+        if (state.mode === 'clock') {
+          lbl0.textContent = 'HRS';
+          lbl1.textContent = 'MIN';
+          lbl2.textContent = 'SEG';
+          lapsBox.style.display = 'none';
+        } else if (state.mode === 'stopwatch') {
+          ampmEl.style.display = 'none';
+          lbl0.textContent = 'MIN';
+          lbl1.textContent = 'SEG';
+          lbl2.textContent = 'CS';
+          dateBanner.style.display = 'inline-block';
+          dateBanner.textContent = swRunning ? 'CRONÓMETRO EN MARCHA' : 'CRONÓMETRO LISTO';
+          lapsBox.style.display = swLaps.length > 0 ? 'block' : 'none';
+        } else if (state.mode === 'timer') {
+          ampmEl.style.display = 'none';
+          lbl0.textContent = 'HRS';
+          lbl1.textContent = 'MIN';
+          lbl2.textContent = 'SEG';
+          dateBanner.style.display = 'inline-block';
+          dateBanner.textContent = alarmActive ? '¡TIEMPO FINALIZADO!' : (tmRunning ? 'TEMPORIZADOR ACTIVO' : 'TEMPORIZADOR');
+          lapsBox.style.display = 'none';
+        }
+
+        // 5. Mostrar barra de controles inferior correspondiente
+        document.getElementById('controls-clock').style.display = state.mode === 'clock' ? 'block' : 'none';
+        document.getElementById('controls-stopwatch').style.display = state.mode === 'stopwatch' ? 'block' : 'none';
+        document.getElementById('controls-timer').style.display = state.mode === 'timer' ? 'block' : 'none';
+
+        // 6. Atenuador nocturno (Dimmer)
+        var dimmerEl = document.getElementById('night-dimmer');
+        dimmerEl.style.opacity = String(state.dimmer / 100);
+        document.getElementById('dimmer-val-label').textContent = state.dimmer + '%';
+        document.getElementById('opt-dimmer').value = state.dimmer;
+
+        // 7. Sincronizar estado de botones del panel de Ajustes
+        document.getElementById('sound-icon-label').textContent = state.soundEnabled ? '♪ ON' : '♪ OFF';
+
+        var optFormat = document.getElementById('opt-format24');
+        optFormat.textContent = state.use24h ? '24 Horas' : '12 Horas (AM/PM)';
+        optFormat.className = 'toggle-btn' + (state.use24h ? ' on' : '');
+
+        var optSeconds = document.getElementById('opt-seconds');
+        optSeconds.textContent = state.showSeconds ? 'Activado' : 'Oculto';
+        optSeconds.className = 'toggle-btn' + (state.showSeconds ? ' on' : '');
+
+        var optDate = document.getElementById('opt-date');
+        optDate.textContent = state.showDate ? 'Activado' : 'Oculto';
+        optDate.className = 'toggle-btn' + (state.showDate ? ' on' : '');
+
+        var optSound = document.getElementById('opt-sound');
+        optSound.textContent = state.soundEnabled ? 'Activado' : 'Silencio';
+        optSound.className = 'toggle-btn' + (state.soundEnabled ? ' on' : '');
+
+        var optBurnin = document.getElementById('opt-burnin');
+        optBurnin.textContent = state.burnInProtection ? 'Activado' : 'Apagado';
+        optBurnin.className = 'toggle-btn' + (state.burnInProtection ? ' on' : '');
+
+        var optLockHud = document.getElementById('opt-lock-hud');
+        optLockHud.textContent = state.lockHud ? 'Fijo Siempre' : 'Auto-ocultar (4s)';
+        optLockHud.className = 'toggle-btn' + (state.lockHud ? ' on' : '');
+
+        // Resaltar pestaña de modo activa
+        var modeTabs = document.querySelectorAll('.mode-tab');
+        for (var i = 0; i < modeTabs.length; i++) {
+          var tab = modeTabs[i];
+          tab.className = 'mode-tab' + (tab.getAttribute('data-mode') === state.mode ? ' active' : '');
+        }
+
+        // Resaltar tema seleccionado
+        var swatches = document.querySelectorAll('.theme-swatch');
+        for (var j = 0; j < swatches.length; j++) {
+          var sw = swatches[j];
+          sw.className = 'theme-swatch' + (sw.getAttribute('data-theme') === state.theme ? ' selected' : '');
+        }
+
+        // Resaltar escala seleccionada
+        var scaleBtns = document.querySelectorAll('.scale-opt');
+        for (var s = 0; s < scaleBtns.length; s++) {
+          var sb = scaleBtns[s];
+          sb.className = 'toggle-btn scale-opt' + (sb.getAttribute('data-scale') === state.scale ? ' on' : '');
+        }
+
+        // Forzar refresco inmediato de dígitos al cambiar de modo
+        displayedDigits = ['--', '--', '--'];
+        tickMainLoop();
+      }
+
+      /* ==========================================================================
+         AUTO-OCULTADO DE LA INTERFAZ (HUD) TRAS 4 SEGUNDOS
+         ========================================================================== */
+      function showHudTemporarily() {
+        document.body.className = document.body.className.replace(/\bhud-hidden\b/g, '').trim();
+        if (hudTimeout) {
+          clearTimeout(hudTimeout);
+        }
+        if (state.lockHud) return;
+
+        hudTimeout = setTimeout(function () {
+          var settingsOpen = document.getElementById('settings-backdrop').className.indexOf('open') !== -1;
+          if (!settingsOpen && !alarmActive && !state.lockHud) {
+            if (document.body.className.indexOf('hud-hidden') === -1) {
+              document.body.className += ' hud-hidden';
+            }
+          }
+        }, 4200);
+      }
+
+      function toggleHud() {
+        var isHidden = document.body.className.indexOf('hud-hidden') !== -1;
+        if (isHidden) {
+          showHudTemporarily();
+        } else if (!state.lockHud) {
+          if (hudTimeout) clearTimeout(hudTimeout);
+          document.body.className += ' hud-hidden';
+        }
+      }
+
+      /* ==========================================================================
+         FUNCIONES DE CRONÓMETRO Y TEMPORIZADOR
+         ========================================================================== */
+      function syncStopwatchButtons() {
+        var btnToggle = document.getElementById('btn-sw-toggle');
+        btnToggle.textContent = swRunning ? 'Pausar' : (swElapsedMs > 0 ? 'Reanudar' : 'Iniciar');
+        btnToggle.className = 'action-btn ' + (swRunning ? 'warning' : 'primary');
+      }
+
+      function renderLaps() {
+        var container = document.getElementById('laps-container');
+        if (swLaps.length === 0) {
+          container.style.display = 'none';
+          container.innerHTML = '';
+          return;
+        }
+        container.style.display = 'block';
+        var html = '';
+        for (var i = swLaps.length - 1; i >= 0; i--) {
+          html += '<div class="lap-item"><span>Vuelta #' + (i + 1) + '</span><strong>' + swLaps[i] + '</strong></div>';
+        }
+        container.innerHTML = html;
+      }
+
+      function syncTimerButtons() {
+        var btnToggle = document.getElementById('btn-tm-toggle');
+        btnToggle.textContent = tmRunning ? 'Pausar' : 'Iniciar';
+        btnToggle.className = 'action-btn ' + (tmRunning ? 'warning' : 'primary');
+      }
+
+      function triggerTimerAlarm() {
+        alarmActive = true;
+        document.getElementById('alarm-overlay').className = 'alarm-active-overlay active';
+        document.getElementById('btn-tm-stop-alarm').style.display = 'inline-block';
+        document.getElementById('date-banner').textContent = '¡TIEMPO FINALIZADO!';
+        showHudTemporarily();
+
+        playAlarmBeep();
+        if (alarmInterval) clearInterval(alarmInterval);
+        alarmInterval = setInterval(playAlarmBeep, 900);
+      }
+
+      function stopTimerAlarm() {
+        alarmActive = false;
+        if (alarmInterval) {
+          clearInterval(alarmInterval);
+          alarmInterval = null;
+        }
+        document.getElementById('alarm-overlay').className = 'alarm-active-overlay';
+        document.getElementById('btn-tm-stop-alarm').style.display = 'none';
+        document.getElementById('date-banner').textContent = 'TEMPORIZADOR';
+      }
+
+      /* ==========================================================================
+         PROTECCIÓN ANTI-QUEMADO (PIXEL SHIFT CADA 60 SEGUNDOS)
+         ========================================================================== */
+      function runPixelShift() {
+        var wrapper = document.getElementById('app-wrapper');
+        if (!state.burnInProtection) {
+          wrapper.style.webkitTransform = 'translate(0px, 0px)';
+          wrapper.style.transform = 'translate(0px, 0px)';
+          return;
+        }
+        var offsets = [
+          [0, 0], [3, 2], [-3, 2], [-3, -2], [3, -2], [0, 3], [0, -3]
+        ];
+        pixelShiftStep = (pixelShiftStep + 1) % offsets.length;
+        var xy = offsets[pixelShiftStep];
+        var rule = 'translate(' + xy[0] + 'px, ' + xy[1] + 'px)';
+        wrapper.style.webkitTransform = rule;
+        wrapper.style.transform = rule;
+      }
+
+      /* ==========================================================================
+         REGISTRO DE EVENTOS TÁCTILES Y CLICS
+         ========================================================================== */
+      function initEvents() {
+        // Desbloquear audio en el primer toque en pantalla
+        document.body.addEventListener('touchstart', unlockAudioOnFirstTouch, { passive: true });
+        document.body.addEventListener('mousedown', unlockAudioOnFirstTouch);
+
+        // Tocar el escenario central alterna la visibilidad del HUD
+        document.getElementById('app-wrapper').addEventListener('click', function () {
+          if (alarmActive) {
+            stopTimerAlarm();
+            return;
+          }
+          toggleHud();
+        });
+
+        // Cambiar modo (Reloj / Cronómetro / Temporizador)
+        var modeTabs = document.querySelectorAll('.mode-tab');
+        for (var i = 0; i < modeTabs.length; i++) {
+          modeTabs[i].addEventListener('click', function (e) {
+            e.stopPropagation();
+            stopTimerAlarm();
+            state.mode = this.getAttribute('data-mode');
+            savePreferences();
+            applyVisualState();
+            showHudTemporarily();
+          });
+        }
+
+        // Botón rápido de sonido
+        document.getElementById('btn-quick-sound').addEventListener('click', function (e) {
+          e.stopPropagation();
+          state.soundEnabled = !state.soundEnabled;
+          savePreferences();
+          applyVisualState();
+          if (state.soundEnabled) playFlipClack();
+          showHudTemporarily();
+        });
+
+        // Botón rápido Modo Noche (alterna entre 0% y 60% de atenuación)
+        document.getElementById('btn-quick-night').addEventListener('click', function (e) {
+          e.stopPropagation();
+          state.dimmer = state.dimmer > 0 ? 0 : 60;
+          savePreferences();
+          applyVisualState();
+          showHudTemporarily();
+        });
+
+        // Abrir y cerrar modal de Ajustes
+        document.getElementById('btn-open-settings').addEventListener('click', function (e) {
+          e.stopPropagation();
+          document.getElementById('settings-backdrop').className = 'settings-backdrop open';
+          showHudTemporarily();
+        });
+
+        document.getElementById('btn-close-settings').addEventListener('click', function (e) {
+          e.stopPropagation();
+          document.getElementById('settings-backdrop').className = 'settings-backdrop';
+          showHudTemporarily();
+        });
+
+        document.getElementById('settings-backdrop').addEventListener('click', function (e) {
+          if (e.target === this) {
+            this.className = 'settings-backdrop';
+            showHudTemporarily();
+          }
+        });
+
+        // Eventos dentro del panel de Ajustes
+        var swatches = document.querySelectorAll('.theme-swatch');
+        for (var j = 0; j < swatches.length; j++) {
+          swatches[j].addEventListener('click', function () {
+            state.theme = this.getAttribute('data-theme');
+            savePreferences();
+            applyVisualState();
+          });
+        }
+
+        document.getElementById('opt-format24').addEventListener('click', function () {
+          state.use24h = !state.use24h;
+          savePreferences();
+          applyVisualState();
+        });
+
+        document.getElementById('opt-seconds').addEventListener('click', function () {
+          state.showSeconds = !state.showSeconds;
+          savePreferences();
+          applyVisualState();
+        });
+
+        document.getElementById('opt-date').addEventListener('click', function () {
+          state.showDate = !state.showDate;
+          savePreferences();
+          applyVisualState();
+        });
+
+        document.getElementById('opt-sound').addEventListener('click', function () {
+          state.soundEnabled = !state.soundEnabled;
+          savePreferences();
+          applyVisualState();
+          if (state.soundEnabled) playFlipClack();
+        });
+
+        var scaleBtns = document.querySelectorAll('.scale-opt');
+        for (var s = 0; s < scaleBtns.length; s++) {
+          scaleBtns[s].addEventListener('click', function () {
+            state.scale = this.getAttribute('data-scale');
+            savePreferences();
+            applyVisualState();
+          });
+        }
+
+        document.getElementById('opt-dimmer').addEventListener('input', function () {
+          state.dimmer = parseInt(this.value, 10) || 0;
+          savePreferences();
+          applyVisualState();
+        });
+
+        document.getElementById('opt-burnin').addEventListener('click', function () {
+          state.burnInProtection = !state.burnInProtection;
+          savePreferences();
+          applyVisualState();
+          runPixelShift();
+        });
+
+        document.getElementById('opt-lock-hud').addEventListener('click', function () {
+          state.lockHud = !state.lockHud;
+          savePreferences();
+          applyVisualState();
+          showHudTemporarily();
+        });
+
+        // Controles del Cronómetro
+        document.getElementById('btn-sw-toggle').addEventListener('click', function (e) {
+          e.stopPropagation();
+          var nowMs = new Date().getTime();
+          if (!swRunning) {
+            swStartTime = nowMs;
+            swRunning = true;
+          } else {
+            swElapsedMs += (nowMs - swStartTime);
+            swRunning = false;
+          }
+          playFlipClack();
+          syncStopwatchButtons();
+          applyVisualState();
+          showHudTemporarily();
+        });
+
+        document.getElementById('btn-sw-lap').addEventListener('click', function (e) {
+          e.stopPropagation();
+          var totalSwMs = swElapsedMs + (swRunning ? (new Date().getTime() - swStartTime) : 0);
+          if (totalSwMs <= 0) return;
+          var totalSeconds = Math.floor(totalSwMs / 1000);
+          var mins = pad2(Math.floor(totalSeconds / 60) % 100);
+          var secs = pad2(totalSeconds % 60);
+          var decis = pad2(Math.floor((totalSwMs % 1000) / 10));
+          swLaps.push(mins + ':' + secs + '.' + decis);
+          playFlipClack();
+          renderLaps();
+          showHudTemporarily();
+        });
+
+        document.getElementById('btn-sw-reset').addEventListener('click', function (e) {
+          e.stopPropagation();
+          swRunning = false;
+          swElapsedMs = 0;
+          swLaps = [];
+          playFlipClack();
+          syncStopwatchButtons();
+          renderLaps();
+          displayedDigits = ['--', '--', '--'];
+          tickMainLoop();
+          showHudTemporarily();
+        });
+
+        // Controles del Temporizador
+        var presetChips = document.querySelectorAll('.preset-chip[data-add-sec]');
+        for (var p = 0; p < presetChips.length; p++) {
+          presetChips[p].addEventListener('click', function (e) {
+            e.stopPropagation();
+            stopTimerAlarm();
+            var addSec = parseInt(this.getAttribute('data-add-sec'), 10) || 0;
+            tmRemainingMs += addSec * 1000;
+            tmTotalSeconds = Math.floor(tmRemainingMs / 1000);
+            playFlipClack();
+            tickMainLoop();
+            showHudTemporarily();
+          });
+        }
+
+        document.getElementById('btn-tm-clear').addEventListener('click', function (e) {
+          e.stopPropagation();
+          stopTimerAlarm();
+          tmRunning = false;
+          tmRemainingMs = 0;
+          tmTotalSeconds = 0;
+          syncTimerButtons();
+          playFlipClack();
+          tickMainLoop();
+          showHudTemporarily();
+        });
+
+        document.getElementById('btn-tm-toggle').addEventListener('click', function (e) {
+          e.stopPropagation();
+          stopTimerAlarm();
+          if (!tmRunning) {
+            if (tmRemainingMs <= 0) {
+              tmRemainingMs = (tmTotalSeconds > 0 ? tmTotalSeconds : 300) * 1000;
+            }
+            tmLastTickTime = new Date().getTime();
+            tmRunning = true;
+          } else {
+            tmRunning = false;
+          }
+          playFlipClack();
+          syncTimerButtons();
+          applyVisualState();
+          showHudTemporarily();
+        });
+
+        document.getElementById('btn-tm-reset').addEventListener('click', function (e) {
+          e.stopPropagation();
+          stopTimerAlarm();
+          tmRunning = false;
+          tmRemainingMs = (tmTotalSeconds > 0 ? tmTotalSeconds : 300) * 1000;
+          playFlipClack();
+          syncTimerButtons();
+          tickMainLoop();
+          showHudTemporarily();
+        });
+
+        document.getElementById('btn-tm-stop-alarm').addEventListener('click', function (e) {
+          e.stopPropagation();
+          stopTimerAlarm();
+        });
+      }
+
+      /* ==========================================================================
+         INICIALIZACIÓN AL CARGAR LA VENTANA
+         ========================================================================== */
+      window.onload = function () {
+        loadPreferences();
+        initEvents();
+        applyVisualState();
+        showHudTemporarily();
+
+        // Bucle de alta frecuencia (50ms) para que el cronómetro y el cambio de segundo sean exactos
+        setInterval(tickMainLoop, 50);
+
+        // Bucle de protección de pantalla cada 60 segundos
+        setInterval(runPixelShift, 60000);
+      };
+    })();
+  </script>
+</body>
+</html>
